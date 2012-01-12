@@ -23,6 +23,7 @@ module CassandraObject
   autoload :Timestamps
   autoload :Type
   autoload :Schema
+  autoload :Indices
 
   module AttributeMethods
     extend ActiveSupport::Autoload

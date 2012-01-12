@@ -41,6 +41,7 @@ module CassandraObject
     include Callbacks
     include Validations
     include Timestamps
+    include Indices
 
     attr_reader :attributes
 

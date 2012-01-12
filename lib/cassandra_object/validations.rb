@@ -25,7 +25,7 @@ module CassandraObject
     end
 
     def save(options={})
-      perform_validations(options) ?  super : false
+      perform_validations(options) ? super : false
     end
     
     def save!

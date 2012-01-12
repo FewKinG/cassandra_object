@@ -5,10 +5,16 @@ module CassandraObject
     included do
       extend ActiveModel::Callbacks
       define_model_callbacks :save, :create, :update, :destroy
+      define_model_callbacks :initialize, :only => :after
     end
 
     def destroy #:nodoc:
       _run_destroy_callbacks { super }
+    end
+
+    def initialize(*args)
+      super(*args)
+      run_callbacks :initialize
     end
 
     private
