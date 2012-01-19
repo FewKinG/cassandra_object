@@ -51,7 +51,7 @@ module CassandraObject
 	:column => column,
 	:entry_id => entry_id
       }).to_s
-      self.class.connection.insert(ind_ind_cf, key.to_s, {col_family.to_s => ind_ind_entry})
+      self.class.connection.insert(ind_ind_cf, self.key.to_s, {col_family.to_s => ind_ind_entry})
     end
 
     #indices << {:key => key, :sup_col => sup_col, :column_attr => column_attr}
@@ -244,11 +244,15 @@ module CassandraObject
 
 	puts "After manual filtering: #{Time.now - time}"
 	if options[:index_data_only]
-	  result.inject({}) {|hash,v| hash.merge(Marshal.load(v.values.first))}
-	  #result.collect{|r| Marshal.load(r.values.first)}
+	  result.inject({}) do |hash,v|
+	    ([hash] + v.values.collect{|val| Marshal.load(val)}).inject(:merge)
+	  end
 	else
-	  result_keys = result.collect{|r| Marshal.load(r.values.first).values.collect{|v| v[:key]}}.flatten.compact
-	  result = []
+	  result_keys = result.collect do |r| 
+	    r.values.collect do |val|
+	      Marshal.load(val).values.collect{|v| v[:key]}
+	    end
+	  end.flatten.compact
 	  multi_get(result_keys, :keys_at_once => 1000, :batch_size => 30)
 	end
       end
