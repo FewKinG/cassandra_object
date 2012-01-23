@@ -214,11 +214,11 @@ module CassandraObject
 	    key = [key]
 	  end
 	  puts "Performing multi_get"
-	  result = connection.multi_get(family_name, key, :start => start, :finish => finish, :batch_size => 50, :coder => coder, :keys_at_once => 1000, :count => nil, :no_hash_return => true).values.compact
+	  result = connection.multi_get(family_name, key, :start => start, :finish => finish, :batch_size => CassandraObject::Configuration.batch_size, :coder => coder, :keys_at_once => CassandraObject::Configuration.keys_at_once, :count => nil, :no_hash_return => true).values.compact
 	else
 	  # Perform get_range over all keys
 	  puts "Performing get_range"
-	  result = connection.get_range(family_name, :start => start, :finish => finish, :key_count => count, :batch_size => 50).values.compact
+	  result = connection.get_range(family_name, :start => start, :finish => finish, :key_count => count, :batch_size => CassandraObject::Configuration.batch_size).values.compact
 	end
 
 	puts "After request: #{Time.now - time}"
@@ -253,7 +253,7 @@ module CassandraObject
 	      Marshal.load(val).values.collect{|v| v[:key]}
 	    end
 	  end.flatten.compact
-	  multi_get(result_keys, :keys_at_once => 1000, :batch_size => 30)
+	  multi_get(result_keys, :keys_at_once => CassandraObject::Configuration.keys_at_once, :batch_size => CassandraObject::Configuration.batch_size)
 	end
       end
 
