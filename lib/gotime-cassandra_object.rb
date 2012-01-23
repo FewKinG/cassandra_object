@@ -24,6 +24,7 @@ module CassandraObject
   autoload :Type
   autoload :Schema
   autoload :Indices
+  autoload :Configuration
 
   module AttributeMethods
     extend ActiveSupport::Autoload
