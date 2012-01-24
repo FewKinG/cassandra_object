@@ -26,6 +26,12 @@ module CassandraObject
   autoload :Indices
   autoload :Configuration
 
+  module Validators
+    extend ActiveSupport::Autoload
+
+    autoload :KeyValidator
+  end
+
   module AttributeMethods
     extend ActiveSupport::Autoload
 
