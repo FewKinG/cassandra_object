@@ -51,7 +51,7 @@ module CassandraObject
 
       def multi_get(keys, options={})
         attribute_results = ActiveSupport::Notifications.instrument("multi_get.cassandra_object", column_family: column_family, keys: keys) do
-          connection.multi_get(column_family, keys.map(&:to_s), consistency: thrift_read_consistency, count: CassandraObject::Configuration.key_count, :batch_size => CassandraObject::Configurationt.batch_size, :keys_at_once => CassandraObject::Configuration.keys_at_once)
+          connection.multi_get(column_family, keys.map(&:to_s), consistency: thrift_read_consistency, count: CassandraObject::Configuration.key_count, :batch_size => CassandraObject::Configuration.batch_size, :keys_at_once => CassandraObject::Configuration.keys_at_once)
         end
 
         Hash[attribute_results.map do |key, attributes|

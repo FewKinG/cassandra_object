@@ -11,8 +11,8 @@ module CassandraObject
       end
     end
 
-    def save
-      if super
+    def save(*args)
+      if super(*args)
 	create_index_entry unless self.class.indices.blank?
 	true
       else
