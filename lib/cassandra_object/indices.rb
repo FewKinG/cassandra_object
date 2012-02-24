@@ -58,6 +58,17 @@ module CassandraObject
     def create_index_entry
       destroy_index_entry
       self.class.indices.each do |k,index|
+	if index[:if]
+	  next unless case index[:if].class.to_s
+		      when Symbol.to_s then self.send(index[:if])
+		      when Proc.to_s then index[:if].call(self)
+		      else false
+		      end
+	  next unless attributes[index[:column_attr].to_s] 
+	  next if index[:key] and not attributes[index[:key].to_s]
+	  next if index[:sup_col] and not attributes[index[:sup_col].to_s]
+	end
+
 	# Create index data
 	data = {}
 	data[:key] = key.to_s
@@ -175,7 +186,7 @@ module CassandraObject
       # by_index :name, :name => {:from => "blah", :to => "Blubb"}
       # @indices << {index_key => {:key => key, :sup_col => sup_col, :column_attr => column_attr}}
       def by_index(index_name, options = {})
-	puts "Search by range"
+	#puts "Search by range"
 	time = Time.now
 	index = self.indices[index_name]
 	raise "Index #{index_name} not existant" unless index
@@ -214,11 +225,11 @@ module CassandraObject
 	    key = [key]
 	  end
 	  puts "Performing multi_get"
-	  result = connection.multi_get(family_name, key, :start => start, :finish => finish, :batch_size => CassandraObject::Configuration.batch_size, :coder => coder, :keys_at_once => CassandraObject::Configuration.keys_at_once, :count => nil, :no_hash_return => true).values.compact
+	  result = connection.multi_get(family_name, key, :start => start, :finish => finish, :batch_size => CassandraObject::Configuration::CFG[:batch_size], :coder => coder, :keys_at_once => CassandraObject::Configuration::CFG[:keys_at_once], :count => nil, :no_hash_return => true).values.compact
 	else
 	  # Perform get_range over all keys
 	  puts "Performing get_range"
-	  result = connection.get_range(family_name, :start => start, :finish => finish, :key_count => count, :batch_size => CassandraObject::Configuration.batch_size).values.compact
+	  result = connection.get_range(family_name, :start => start, :finish => finish, :key_count => count, :batch_size => CassandraObject::Configuration::CFG[:batch_size]).values.compact
 	end
 
 	puts "After request: #{Time.now - time}"
@@ -232,6 +243,8 @@ module CassandraObject
 	    start = finish = nil
 	  end
 	  result = result.collect(&:values).flatten
+	else
+	  start = finish = nil
 	end
 
 	puts "Got #{result.count} results"
@@ -248,12 +261,20 @@ module CassandraObject
 	    ([hash] + v.values.collect{|val| Marshal.load(val)}).inject(:merge)
 	  end
 	else
-	  result_keys = result.collect do |r| 
-	    r.values.collect do |val|
-	      Marshal.load(val).values.collect{|v| v[:key]}
-	    end
-	  end.flatten.compact
-	  multi_get(result_keys, :keys_at_once => CassandraObject::Configuration.keys_at_once, :batch_size => CassandraObject::Configuration.batch_size)
+	  if index[:key]
+	    result_keys = result.collect do |r| 
+	      r.values.collect do |val|
+		Marshal.load(val).values.collect{|v| v[:key]}
+	      end
+	    end.flatten.compact
+	  else
+	    result_keys = result.collect do |r| 
+	      r.values.collect do |val|
+		Marshal.load(val)[:key]
+	      end
+	    end.flatten.compact
+	  end
+	  find_with_ids(result_keys)
 	end
       end
 
@@ -264,11 +285,11 @@ module CassandraObject
 	#raise "Index attribute #{index_key} does not exist in #{self.to_s}" unless self.method_defined? column_attr
 	#raise "Index subgroup #{sup_col} does not exist in #{self.to_s}" unless sup_col.nil? or self.method_defined? sup_col
 	#raise "Index group #{key} does not exist in #{self.to_s}" unless key.nil? or self.method_defined? key
-	validates(index_key, :presence => true)
-	validates(key, :presence => true) if key
-	validates(sup_col, :presence => true) if sup_col
+	validates(index_key, :presence => true) unless options[:if]
+	validates(key, :presence => true) if key and not options[:if]
+	validates(sup_col, :presence => true) if sup_col and not options[:if]
 	index_name = options[:name] || index_key
-	self.indices[index_name] = {:key => key, :sup_col => sup_col, :column_attr => column_attr}
+	self.indices[index_name] = {:key => key, :sup_col => sup_col, :column_attr => column_attr, :if => options[:if]}
 	if block_given?
 	  self.indices[index_name][:block] = block
 	end

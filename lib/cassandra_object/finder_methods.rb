@@ -8,7 +8,7 @@ module CassandraObject
 
         if key_string.blank?
           raise CassandraObject::RecordNotFound, "Couldn't find #{self.name} with key #{key.inspect}"
-        elsif attributes = connection.get(column_family, key_string, {:count => CassandraObject::Configuration.key_count}).presence
+        elsif attributes = connection.get(column_family, key_string, {:count => CassandraObject::Configuration::CFG[:key_count]}).presence
           instantiate(key_string, attributes)
         else
           raise CassandraObject::RecordNotFound
@@ -24,7 +24,7 @@ module CassandraObject
       def all(options = {})
         limit = options[:limit] || 100
         results = ActiveSupport::Notifications.instrument("get_range.cassandra_object", column_family: column_family, key_count: limit) do
-          connection.get_range(column_family, key_count: limit, consistency: thrift_read_consistency, count: CassandraObject::Configuration.key_count, :batch_size => CassandraObject::Configuration.batch_size)
+          connection.get_range(column_family, key_count: limit, consistency: thrift_read_consistency, count: CassandraObject::Configuration::CFG[:key_count], :batch_size => CassandraObject::Configuration::CFG[:batch_size])
         end
 
         results.map do |k, v|
@@ -51,7 +51,7 @@ module CassandraObject
 
       def multi_get(keys, options={})
         attribute_results = ActiveSupport::Notifications.instrument("multi_get.cassandra_object", column_family: column_family, keys: keys) do
-          connection.multi_get(column_family, keys.map(&:to_s), consistency: thrift_read_consistency, count: CassandraObject::Configuration.key_count, :batch_size => CassandraObject::Configuration.batch_size, :keys_at_once => CassandraObject::Configuration.keys_at_once)
+          connection.multi_get(column_family, keys.map(&:to_s), consistency: thrift_read_consistency, count: CassandraObject::Configuration::CFG[:key_count], :batch_size => CassandraObject::Configuration::CFG[:batch_size], :keys_at_once => CassandraObject::Configuration::CFG[:keys_at_once])
         end
 
         Hash[attribute_results.map do |key, attributes|

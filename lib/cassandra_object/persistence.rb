@@ -38,6 +38,7 @@ module CassandraObject
           object.instance_variable_set("@new_record", false)
           object.instance_variable_set("@destroyed", false)
           object.instance_variable_set("@attributes", typecast_attributes(object, attributes))
+	  object.run_callbacks :initialize
         end
       end
 

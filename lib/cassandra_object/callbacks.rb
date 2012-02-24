@@ -12,11 +12,6 @@ module CassandraObject
       _run_destroy_callbacks { super }
     end
 
-    def initialize(*args)
-      super(*args)
-      run_callbacks :initialize
-    end
-
     private
       def create_or_update #:nodoc:
         _run_save_callbacks { super }
