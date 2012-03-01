@@ -187,7 +187,7 @@ module CassandraObject
       # @indices << {index_key => {:key => key, :sup_col => sup_col, :column_attr => column_attr}}
       def by_index(index_name, options = {})
 	#puts "Search by range"
-	time = Time.now
+	#time = Time.now
 	index = self.indices[index_name]
 	raise "Index #{index_name} not existant" unless index
 	family_name = "#{self.to_s}Index#{index_name.to_s.camelcase}"
@@ -218,21 +218,21 @@ module CassandraObject
 	  coder = attribute_definitions[index[:column_attr]].coder
 	end
 
-	puts "Before request: #{Time.now - time}"
+	#puts "Before request: #{Time.now - time}"
 	if key
 	  # Perform multi_get
 	  unless key.is_a? Array
 	    key = [key]
 	  end
-	  puts "Performing multi_get"
+	  #puts "Performing multi_get"
 	  result = connection.multi_get(family_name, key, :start => start, :finish => finish, :batch_size => CassandraObject::Configuration::CFG[:batch_size], :coder => coder, :keys_at_once => CassandraObject::Configuration::CFG[:keys_at_once], :count => nil, :no_hash_return => true).values.compact
 	else
 	  # Perform get_range over all keys
-	  puts "Performing get_range"
+	  #puts "Performing get_range"
 	  result = connection.get_range(family_name, :start => start, :finish => finish, :key_count => count, :batch_size => CassandraObject::Configuration::CFG[:batch_size]).values.compact
 	end
 
-	puts "After request: #{Time.now - time}"
+	#puts "After request: #{Time.now - time}"
 	if index[:sup_col]
 	  if column_attr.is_a? Hash
 	    start = column_attr[:from]
@@ -247,15 +247,15 @@ module CassandraObject
 	  start = finish = nil
 	end
 
-	puts "Got #{result.count} results"
+	#puts "Got #{result.count} results"
 
-	puts "Until manual filtering: #{Time.now - time}" 
+	#puts "Until manual filtering: #{Time.now - time}" 
 	if start	      
-	  puts "Perform manual filtering"
+	  #puts "Perform manual filtering"
 	  result.reject!{|entry| (start and decode(index[:column_attr], entry.keys.first) < start) or (finish and unpack(index[:column_attr], entry.keys.first) > finish)}
 	end
 
-	puts "After manual filtering: #{Time.now - time}"
+	#puts "After manual filtering: #{Time.now - time}"
 	if options[:index_data_only]
 	  result.inject({}) do |hash,v|
 	    ([hash] + v.values.collect{|val| Marshal.load(val)}).inject(:merge)
