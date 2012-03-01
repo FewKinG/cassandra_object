@@ -59,14 +59,15 @@ module CassandraObject
       destroy_index_entry
       self.class.indices.each do |k,index|
 	if index[:if]
-	  next unless case index[:if].class.to_s
+	  res = case index[:if].class.to_s
 		      when Symbol.to_s then self.send(index[:if])
 		      when Proc.to_s then index[:if].call(self)
 		      else false
 		      end
-	  next unless attributes[index[:column_attr].to_s] 
-	  next if index[:key] and not attributes[index[:key].to_s]
-	  next if index[:sup_col] and not attributes[index[:sup_col].to_s]
+	  next unless res
+	  next if attributes[index[:column_attr].to_s].blank?
+	  next if not index[:key].blank? and attributes[index[:key].to_s].blank?
+	  next if not index[:sup_col].blank? and attributes[index[:sup_col].to_s].blank?
 	end
 
 	# Create index data
