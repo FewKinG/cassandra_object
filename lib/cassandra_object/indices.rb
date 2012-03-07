@@ -58,6 +58,9 @@ module CassandraObject
     def create_index_entry
       destroy_index_entry
       self.class.indices.each do |k,index|
+	column_attr = attributes[index[:column_attr].to_s] || self.send(index[:column_attr])
+	key = index[:key] ? attributes[index[:key].to_s] || self.send(index[:key]) : nil
+	sup_col = index[:sup_col] ? attributes[index[:sup_col].to_s] || self.send(index[:sup_col]) : nil
 	if index[:if]
 	  res = case index[:if].class.to_s
 		      when Symbol.to_s then self.send(index[:if])
@@ -65,9 +68,9 @@ module CassandraObject
 		      else false
 		      end
 	  next unless res
-	  next if attributes[index[:column_attr].to_s].blank?
-	  next if not index[:key].blank? and attributes[index[:key].to_s].blank?
-	  next if not index[:sup_col].blank? and attributes[index[:sup_col].to_s].blank?
+	  next if val.blank?
+	  next if not index[:key].blank? and key.blank?
+	  next if not index[:sup_col].blank? and sup_col.blank?
 	end
 
 	# Create index data
@@ -78,10 +81,8 @@ module CassandraObject
 	end
 
 	# Set index family parameters
-	column_attr = (attributes[index[:column_attr].to_s] || self.send(index[:column_attr].to_s)).to_s
 	col_family = "#{self.class.to_s}Index#{k.to_s.camelcase}"
-	key = index[:key].nil? ? SimpleUUID::UUID.new.to_s : (attributes[index[:key].to_s] || self.send(index[:key].to_s)).to_s
-	sup_col = index[:sup_col].nil? ? nil : (attributes[index[:sup_col].to_s] || self.send(index[:sup_col].to_s)).to_s
+	key ||= SimpleUUID::UUID.new.to_s
 
 	# Handle possible ambigous index entries
 	if index[:key]
@@ -158,11 +159,13 @@ module CassandraObject
       end
 
       def encode(key, value = nil)
-	attribute_definitions[key.to_sym].coder.encode (value || attributes[key])
+	coder = attribute_definitions[key.to_sym].try(:coder)
+	coder ? coder.encode(value || attributes[key]) : value || attributes[key]
       end
 
       def decode(key, value)
-	attribute_definitions[key.to_sym].coder.decode(value)
+	coder = attribute_definitions[key.to_sym].try(:coder)
+	coder ? coder.decode(value) : value
       end
 
       def recreate_index_entries
@@ -206,7 +209,7 @@ module CassandraObject
 	  else
 	    start = finish = nil
 	  end
-	  coder = attribute_definitions[index[:sup_col].to_sym].coder
+	  coder = attribute_definitions[index[:sup_col].to_sym].try(:coder)
 	else
 	  if column_attr.is_a? Hash
 	    start = encode(index[:column_attr], column_attr[:from])
@@ -216,7 +219,7 @@ module CassandraObject
 	  else
 	    start = finish = nil
 	  end
-	  coder = attribute_definitions[index[:column_attr].to_sym].coder
+	  coder = attribute_definitions[index[:column_attr].to_sym].try(:coder)
 	end
 
 	#puts "Before request: #{Time.now - time}"
