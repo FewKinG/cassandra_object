@@ -75,7 +75,7 @@ module CassandraObject
 
 	# Create index data
 	data = {}
-	data[:key] = key.to_s
+	data[:key] = self.key.to_s
 	if index[:block]
 	  data = index[:block].call(self).merge(data)
 	end
