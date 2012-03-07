@@ -158,11 +158,11 @@ module CassandraObject
       end
 
       def encode(key, value = nil)
-	attribute_definitions[key].coder.encode (value || attributes[key])
+	attribute_definitions[key.to_sym].coder.encode (value || attributes[key])
       end
 
       def decode(key, value)
-	attribute_definitions[key].coder.decode(value)
+	attribute_definitions[key.to_sym].coder.decode(value)
       end
 
       def recreate_index_entries
@@ -206,7 +206,7 @@ module CassandraObject
 	  else
 	    start = finish = nil
 	  end
-	  coder = attribute_definitions[index[:sup_col]].coder
+	  coder = attribute_definitions[index[:sup_col].to_sym].coder
 	else
 	  if column_attr.is_a? Hash
 	    start = encode(index[:column_attr], column_attr[:from])
@@ -216,7 +216,7 @@ module CassandraObject
 	  else
 	    start = finish = nil
 	  end
-	  coder = attribute_definitions[index[:column_attr]].coder
+	  coder = attribute_definitions[index[:column_attr].to_sym].coder
 	end
 
 	#puts "Before request: #{Time.now - time}"
