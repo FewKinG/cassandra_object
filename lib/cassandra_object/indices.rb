@@ -68,7 +68,7 @@ module CassandraObject
 		      else false
 		      end
 	  next unless res
-	  next if val.blank?
+	  next if column_attr.blank?
 	  next if not index[:key].blank? and key.blank?
 	  next if not index[:sup_col].blank? and sup_col.blank?
 	end
