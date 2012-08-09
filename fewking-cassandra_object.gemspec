@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = 'fewking-cassandra_object'
-  s.version = '2.10.13'
+  s.version = '2.10.14'
   s.description = 'Cassandra ActiveModel'
   s.summary = 'Cassandra ActiveModel'
 
