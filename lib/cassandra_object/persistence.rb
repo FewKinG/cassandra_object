@@ -34,7 +34,7 @@ module CassandraObject
       def instantiate(key, attributes)
 				klass = self
 				if polymorphic
-					klass = attributes[polymorphic] ? attributes[polymorphic].camelcase.constantize : self
+					klass = attributes[polymorphic] ? attributes[polymorphic].camelcase.safe_constantize || self : self
 					return nil if self != polymorphic_base and (klass != self or attributes[polymorphic].nil?)
 				end
         klass.allocate.tap do |object|
