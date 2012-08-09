@@ -42,6 +42,7 @@ module CassandraObject
     include Validations
     include Timestamps
     include Indices
+		include Polymorphism
 
     attr_reader :attributes
 

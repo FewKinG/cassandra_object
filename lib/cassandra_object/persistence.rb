@@ -32,13 +32,18 @@ module CassandraObject
       end
 
       def instantiate(key, attributes)
-        allocate.tap do |object|
+				klass = self
+				if polymorphic
+					klass = attributes[polymorphic] ? attributes[polymorphic].camelcase.constantize : self
+					return nil if self != polymorphic_base and (klass != self or attributes[polymorphic].nil?)
+				end
+        klass.allocate.tap do |object|
           object.instance_variable_set("@schema_version", attributes.delete('schema_version'))
           object.instance_variable_set("@key", parse_key(key)) if key
           object.instance_variable_set("@new_record", false)
           object.instance_variable_set("@destroyed", false)
           object.instance_variable_set("@attributes", typecast_attributes(object, attributes))
-	  object.run_callbacks :initialize
+					object.run_callbacks :initialize
         end
       end
 
@@ -55,7 +60,7 @@ module CassandraObject
 
       def typecast_attributes(object, attributes)
         attributes = attributes.symbolize_keys
-        Hash[attribute_definitions.map { |k, attribute_definition| [k.to_s, attribute_definition.instantiate(object, attributes[k])] }]
+        Hash[object.class.attribute_definitions.map { |k, attribute_definition| [k.to_s, attribute_definition.instantiate(object, attributes[k])] }]
       end
     end
 

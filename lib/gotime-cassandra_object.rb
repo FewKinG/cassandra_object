@@ -24,6 +24,7 @@ module CassandraObject
   autoload :Type
   autoload :Schema
   autoload :Indices
+	autoload :Polymorphism
   autoload :Configuration
 
   module Validators
