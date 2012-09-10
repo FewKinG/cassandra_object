@@ -24,7 +24,6 @@ module CassandraObject
       def write(key, attributes, schema_version, ttl = nil)
         attributes = encode_attributes(attributes, schema_version)
         ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
-					puts "TTL: #{ttl}"
           connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency, ttl: ttl)
           # if nil_attributes.any?
             # connection.remove(connection, key.to_s, *nil_attributes)
