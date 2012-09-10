@@ -21,10 +21,11 @@ module CassandraObject
         end
       end
 
-      def write(key, attributes, schema_version)
+      def write(key, attributes, schema_version, ttl = nil)
         attributes = encode_attributes(attributes, schema_version)
         ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
-          connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency)
+					puts "TTL: #{ttl}"
+          connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency, ttl: ttl)
           # if nil_attributes.any?
             # connection.remove(connection, key.to_s, *nil_attributes)
           # end          
@@ -132,7 +133,8 @@ module CassandraObject
 
       def write
         changed_attributes = changed.inject({}) { |h, n| h[n] = read_attribute(n); h }
-        self.class.write(key, changed_attributes, schema_version)
+				ttl = self.class.ttl_seconds.kind_of?(Proc) ? instance_eval(&(self.class.ttl_seconds)) : self.class.ttl_seconds
+        self.class.write(key, changed_attributes, schema_version, ttl)
       end
   end
 end

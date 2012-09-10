@@ -151,12 +151,12 @@ module CassandraObject
     module ClassMethods
 
       def delete_all
-	super
-	indices.keys.each do |index|
-	  connection.clear_column_family!("#{self.to_s}Index#{index.to_s.camelcase}")
-	end
-	connection.clear_column_family!("#{self.to_s}Indices") unless indices.empty?
-      end
+				super
+				indices.keys.each do |index|
+					connection.clear_column_family!("#{self.to_s}Index#{index.to_s.camelcase}")
+				end
+				connection.clear_column_family!("#{self.to_s}Indices") unless indices.empty?
+			end
 
       def encode(key, value = nil)
 	coder = attribute_definitions[key.to_sym].try(:coder)

@@ -43,6 +43,7 @@ module CassandraObject
     include Timestamps
     include Indices
 		include Polymorphism
+		include TTL
 
     attr_reader :attributes
 
