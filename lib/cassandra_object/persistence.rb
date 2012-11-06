@@ -101,12 +101,12 @@ module CassandraObject
     end
 
     def update_attributes(attributes)
-      self.attributes = attributes
+			self.assign_attributes(attributes)
       save
     end
 
     def update_attributes!(attributes)
-      self.attributes = attributes
+			self.assign_attributes(attributes)
       save!
     end
 

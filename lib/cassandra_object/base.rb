@@ -27,6 +27,7 @@ module CassandraObject
     extend ActiveModel::Naming
     include ActiveModel::Conversion
     extend ActiveSupport::DescendantsTracker
+		include ActiveModel::MassAssignmentSecurity
     
     include Connection
     include Consistency
@@ -56,7 +57,7 @@ module CassandraObject
       @new_record = true
       @destroyed = false
       @attributes = {}
-      self.attributes = attributes
+			self.assign_attributes(attributes)
       attribute_definitions.each do |attr, attribute_definition|
         unless attribute_exists?(attr)
           self.attributes[attr.to_s] = self.class.typecast_attribute(self, attr, nil)
@@ -65,6 +66,13 @@ module CassandraObject
 
       @schema_version = self.class.current_schema_version
     end
+
+		def assign_attributes(attributes, options = {})
+			unless options[:without_protection]
+				attributes = sanitize_for_mass_assignment(attributes)
+			end
+			self.attributes = attributes
+		end
 
     def to_param
       id.to_s if persisted?
