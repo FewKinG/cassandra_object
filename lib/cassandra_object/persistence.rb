@@ -25,9 +25,9 @@ module CassandraObject
         attributes = encode_attributes(attributes, schema_version)
         ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
           connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency, ttl: ttl)
-          # if nil_attributes.any?
-            # connection.remove(connection, key.to_s, *nil_attributes)
-          # end          
+          if (nil_attributes = attributes.select{|key,value| value.nil?}).any?
+            connection.remove(connection, key.to_s, *nil_attributes, consistency: thrift_write_consistency, tt: ttl)
+          end          
         end
       end
 
