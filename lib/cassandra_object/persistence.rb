@@ -22,11 +22,12 @@ module CassandraObject
       end
 
       def write(key, attributes, schema_version, ttl = nil)
+				nil_attributes = attributes.select{|key,value| value.nil?}
         attributes = encode_attributes(attributes, schema_version)
         ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
           connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency, ttl: ttl)
-          if (nil_attributes = attributes.select{|key,value| value.nil?}).any?
-            connection.remove(connection, key.to_s, *nil_attributes, consistency: thrift_write_consistency, tt: ttl)
+          if nil_attributes.any?
+            connection.remove(column_family, key.to_s, *nil_attributes.keys, consistency: thrift_write_consistency)
           end          
         end
       end
@@ -53,7 +54,7 @@ module CassandraObject
           # The ruby thrift gem expects all strings to be encoded as ascii-8bit.
           unless value.nil?
             encoded[column_name.to_s] = attribute_definitions[column_name.to_sym].coder.encode(value).force_encoding('ASCII-8BIT')
-          end
+					end
         end
         encoded
       end
