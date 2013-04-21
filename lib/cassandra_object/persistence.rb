@@ -27,8 +27,8 @@ module CassandraObject
         ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
           connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency, ttl: ttl)
           if nil_attributes.any?
-						nil_attributes.each do |key,value|
-	            connection.remove(column_family, key.to_s, key, consistency: thrift_write_consistency)
+						nil_attributes.each do |attribute,value|
+	            connection.remove(column_family, key.to_s, attribute, consistency: thrift_write_consistency)
 						end
           end          
         end
