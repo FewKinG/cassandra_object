@@ -69,7 +69,7 @@ module CassandraObject
 
 		def assign_attributes(attributes, options = {})
 			unless options[:without_protection]
-				attributes = sanitize_for_mass_assignment(attributes)
+				attributes = sanitize_for_mass_assignment(attributes, options[:as])
 			end
 			self.attributes = attributes
 		end
