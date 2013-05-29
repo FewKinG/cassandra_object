@@ -59,7 +59,7 @@ module CassandraObject
       @new_record = true
       @destroyed = false
       @attributes = {}
-			self.assign_attributes(attributes)
+			self.assign_attributes(attributes || {})
       attribute_definitions.each do |attr, attribute_definition|
         unless attribute_exists?(attr)
           @attributes[attr.to_s] = self.class.typecast_attribute(self, attr, nil)

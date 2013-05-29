@@ -40,6 +40,7 @@ module CassandraObject
 					klass = attributes[polymorphic] ? attributes[polymorphic].camelcase.safe_constantize || self : self
 					return nil if self != polymorphic_base and (klass != self or attributes[polymorphic].nil?)
 				end
+				return nil if attributes.except("schema_version").count == 0
         klass.allocate.tap do |object|
           object.instance_variable_set("@id", id) if id
           object.instance_variable_set("@new_record", false)
