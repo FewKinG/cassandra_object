@@ -3,9 +3,9 @@ module CassandraObject
     extend ActiveSupport::Concern
 
     module ClassMethods
-      def remove(key)
-        ActiveSupport::Notifications.instrument("remove.cassandra_object", column_family: column_family, key: key) do
-          connection.remove(column_family, key.to_s, consistency: thrift_write_consistency)
+      def remove(id)
+        ActiveSupport::Notifications.instrument("remove.cassandra_object", column_family: column_family, key: id) do
+          connection.remove(column_family, id, consistency: thrift_write_consistency)
         end
       end
 
@@ -20,29 +20,28 @@ module CassandraObject
           object.save
         end
       end
-
-      def write(key, attributes, schema_version, ttl = nil)
+      
+			def write(id, attributes, ttl = nil)
 				nil_attributes = attributes.select{|key,value| value.nil?}
-        attributes = encode_attributes(attributes, schema_version)
-        ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: key, attributes: attributes) do
-          connection.insert(column_family, key.to_s, attributes, consistency: thrift_write_consistency, ttl: ttl)
+        attributes = encode_attributes(attributes)
+        ActiveSupport::Notifications.instrument("insert.cassandra_object", column_family: column_family, key: id, attributes: attributes) do
+          connection.insert(column_family, id, attributes, consistency: thrift_write_consistency, ttl: ttl)
           if nil_attributes.any?
 						nil_attributes.each do |attribute,value|
-	            connection.remove(column_family, key.to_s, attribute, consistency: thrift_write_consistency)
+	            connection.remove(column_family, id, attribute, consistency: thrift_write_consistency)
 						end
           end          
         end
       end
 
-      def instantiate(key, attributes)
+      def instantiate(id, attributes)
 				klass = self
 				if polymorphic
 					klass = attributes[polymorphic] ? attributes[polymorphic].camelcase.safe_constantize || self : self
 					return nil if self != polymorphic_base and (klass != self or attributes[polymorphic].nil?)
 				end
         klass.allocate.tap do |object|
-          object.instance_variable_set("@schema_version", attributes.delete('schema_version'))
-          object.instance_variable_set("@key", parse_key(key)) if key
+          object.instance_variable_set("@id", id) if id
           object.instance_variable_set("@new_record", false)
           object.instance_variable_set("@destroyed", false)
           object.instance_variable_set("@attributes", typecast_attributes(object, attributes))
@@ -50,8 +49,8 @@ module CassandraObject
         end
       end
 
-      def encode_attributes(attributes, schema_version)
-        encoded = {"schema_version" => schema_version.to_s}
+      def encode_attributes(attributes)
+        encoded = {}
         attributes.each do |column_name, value|
           # The ruby thrift gem expects all strings to be encoded as ascii-8bit.
           unless value.nil?
@@ -80,19 +79,11 @@ module CassandraObject
     end
 
     def save(*)
-      begin
-        create_or_update
-      rescue CassandraObject::RecordInvalid
-        false
-      end
-    end
-
-    def save!
-      create_or_update || raise(RecordNotSaved)
+      new_record? ? create : update
     end
 
     def destroy
-      self.class.remove(key)
+      self.class.remove(id)
       @destroyed = true
       freeze
     end
@@ -100,7 +91,7 @@ module CassandraObject
     def update_attribute(name, value)
       name = name.to_s
       send("#{name}=", value)
-      save(:validate => false)
+      save(validate: false)
     end
 
     def update_attributes(attributes)
@@ -114,29 +105,23 @@ module CassandraObject
     end
 
     def reload
-      @attributes.update(self.class.find(self.id).instance_variable_get('@attributes'))
+      @attributes.update(self.class.find(id).instance_variable_get('@attributes'))
     end
 
     private
-      def create_or_update
-        result = new_record? ? create : update
-        result != false
-      end
-
-      def create
-        write
-        @new_record = false
-        key
-      end
-    
       def update
         write
       end
 
+      def create
+        @new_record = false
+        write
+      end
+
       def write
-        changed_attributes = changed.inject({}) { |h, n| h[n] = read_attribute(n); h }
+        changed_attributes = Hash[changed.map { |attr| [attr, read_attribute(attr)] }]
 				ttl = self.class.ttl_seconds.kind_of?(Proc) ? instance_eval(&(self.class.ttl_seconds)) : self.class.ttl_seconds
-        self.class.write(key, changed_attributes, schema_version, ttl)
+        self.class.write(id, changed_attributes, ttl)
       end
   end
 end

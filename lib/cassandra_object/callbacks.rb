@@ -4,6 +4,8 @@ module CassandraObject
 
     included do
       extend ActiveModel::Callbacks
+      include ActiveModel::Validations::Callbacks
+
       define_model_callbacks :save, :create, :update, :destroy
       define_model_callbacks :initialize, :only => :after
     end
@@ -13,7 +15,7 @@ module CassandraObject
     end
 
     private
-      def create_or_update #:nodoc:
+      def write #:nodoc:
         _run_save_callbacks { super }
       end
 

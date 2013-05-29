@@ -1,4 +1,4 @@
 class Issue < CassandraObject::Base
-  key :uuid
   string :description
+  before_save { self.description ||= 'funny' }
 end

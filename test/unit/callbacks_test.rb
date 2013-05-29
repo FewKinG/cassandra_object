@@ -3,10 +3,9 @@ require 'test_helper'
 class CassandraObject::CallbacksTest < CassandraObject::TestCase
   class TestIssue < CassandraObject::Base
     self.column_family = 'Issues'
-    key :uuid
     string :description
 
-    %w(after_save after_create after_update after_destroy).each do |method|
+    %w(before_validation after_validation after_save after_create after_update after_destroy).each do |method|
       send(method) do
         callback_history << method
       end
@@ -24,7 +23,7 @@ class CassandraObject::CallbacksTest < CassandraObject::TestCase
   test 'create' do
     issue = TestIssue.create
 
-    assert_equal ['after_create', 'after_save'], issue.callback_history
+    assert_equal ['before_validation', 'after_validation', 'after_save', 'after_create'], issue.callback_history
   end
 
   test 'update' do
@@ -33,7 +32,7 @@ class CassandraObject::CallbacksTest < CassandraObject::TestCase
 
     issue.update_attribute :description, 'foo'
 
-    assert_equal ['after_update', 'after_save'], issue.callback_history
+    assert_equal ['after_save', 'after_update'], issue.callback_history
   end
 
   test 'destroy' do

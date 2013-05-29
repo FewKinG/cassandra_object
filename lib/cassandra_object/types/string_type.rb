@@ -2,9 +2,8 @@ module CassandraObject
   module Types
     class StringType < BaseType
       def encode(str)
-        raise ArgumentError.new("#{self} requires a String") unless str.kind_of?(String)
-	#str.encoding.to_s != "US-ASCII" ? str.dup.unpack("a*").first : str.dup
-	str.dup
+        raise ArgumentError.new("#{str.inspect} is not a String") unless str.kind_of?(String)
+        str.dup
       end
 
       def wrap(record, name, value)

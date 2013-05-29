@@ -16,9 +16,12 @@ class CassandraObject::Types::ArrayTypeTest < CassandraObject::Types::TestCase
   end
 
   class TestIssue < CassandraObject::Base
-    key :uuid
     self.column_family = 'Issues'
     array :favorite_colors, unique: true
+  end
+
+  test 'default' do
+    assert_equal [], TestIssue.new.favorite_colors
   end
 
   test 'append marks dirty' do
@@ -39,8 +42,8 @@ class CassandraObject::Types::ArrayTypeTest < CassandraObject::Types::TestCase
     assert_equal({'favorite_colors' => [['red'], []]}, issue.changes)
   end
 
-  test 'unique array removes nil' do
-    issue = TestIssue.create favorite_colors: ['blue', 'red', nil]
+  test 'unique array removes blank' do
+    issue = TestIssue.create favorite_colors: ['blue', 'red', '', nil]
     assert_equal ['blue', 'red'], issue.favorite_colors
   end
 

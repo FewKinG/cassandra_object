@@ -13,13 +13,14 @@ module CassandraObject
   autoload :Callbacks
   autoload :Validations
   autoload :Identity
+  autoload :Inspect
   autoload :Serialization
   autoload :Migrations
-  autoload :Cursor
   autoload :Collection
   autoload :Mocking
   autoload :Batches
   autoload :FinderMethods
+  autoload :Savepoints
   autoload :Timestamps
   autoload :Type
   autoload :Schema
@@ -34,12 +35,21 @@ module CassandraObject
     autoload :KeyValidator
   end
 
+  module BelongsTo
+    extend ActiveSupport::Autoload
+
+    autoload :Association
+    autoload :Builder
+    autoload :Reflection
+  end
+
   module AttributeMethods
     extend ActiveSupport::Autoload
 
     eager_autoload do
       autoload :Definition
       autoload :Dirty
+      autoload :PrimaryKey
       autoload :Typecasting
     end
   end

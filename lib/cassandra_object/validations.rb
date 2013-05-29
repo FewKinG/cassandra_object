@@ -12,8 +12,7 @@ module CassandraObject
     include ActiveModel::Validations
     include CassandraObject::Validators
     
-    included do |base|
-      define_model_callbacks :validation
+    included do
       define_callbacks :validate, scope: :name
 
       validates :key, :key => true
@@ -28,9 +27,14 @@ module CassandraObject
     end
 
     def save(options={})
-      run_callbacks :validation do
-        perform_validations(options) ? super : false
-      end
+			run_callbacks :validation do
+				if perform_validations(options)
+					super
+					true
+				else
+					false
+				end
+			end
     end
     
     def save!

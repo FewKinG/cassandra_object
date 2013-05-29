@@ -32,39 +32,39 @@ module CassandraObject
     include Connection
     include Consistency
     include Identity
+    include Inspect
     include FinderMethods
     include Persistence
     include Batches
     include AttributeMethods
+    include Validations
     include AttributeMethods::Dirty
+    include AttributeMethods::PrimaryKey
     include AttributeMethods::Typecasting
     include BelongsTo
-    include Callbacks
-    include Validations
+    include Callbacks, ActiveModel::Observing
     include Timestamps
     include Indices
 		include Polymorphism
 		include TTL
 
     attr_reader :attributes
+    include Savepoints
 
     include Serialization
     include Migrations
     include Mocking
 
-    def initialize(attributes={})
-      @key = attributes.delete(:key)
+    def initialize(attributes=nil)
       @new_record = true
       @destroyed = false
       @attributes = {}
 			self.assign_attributes(attributes)
       attribute_definitions.each do |attr, attribute_definition|
         unless attribute_exists?(attr)
-          self.attributes[attr.to_s] = self.class.typecast_attribute(self, attr, nil)
+          @attributes[attr.to_s] = self.class.typecast_attribute(self, attr, nil)
         end
       end
-
-      @schema_version = self.class.current_schema_version
     end
 
 		def assign_attributes(attributes, options = {})
@@ -75,7 +75,7 @@ module CassandraObject
 		end
 
     def to_param
-      id.to_s if persisted?
+      id
     end
 
     def hash

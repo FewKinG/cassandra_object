@@ -7,18 +7,18 @@ class CassandraObject::PersistenceTest < CassandraObject::TestCase
     end
     
     assert_equal(
-      {'schema_version' => 'foo'},
-      klass.encode_attributes({}, 'foo')
+      {},
+      klass.encode_attributes({})
     )
 
     assert_equal(
-      {'schema_version' => 'foo'},
-      klass.encode_attributes({description: nil}, 'foo')
+      {},
+      klass.encode_attributes({description: nil})
     )
 
     assert_equal(
-      {'description' => 'lol', 'schema_version' => 'foo'},
-      klass.encode_attributes({description: 'lol'}, 'foo')
+      {'description' => 'lol'},
+      klass.encode_attributes({description: 'lol'})
     )
   end
 
@@ -99,7 +99,6 @@ class CassandraObject::PersistenceTest < CassandraObject::TestCase
     fresh_issue = Issue.find(persisted_issue.id)
     fresh_issue.update_attribute(:description, 'say what')
 
-    assert_nil persisted_issue.description
     persisted_issue.reload
     assert_equal 'say what', persisted_issue.description
   end
