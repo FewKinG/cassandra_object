@@ -40,7 +40,9 @@ module CassandraObject
 
         ids = ids.compact.map(&:to_s).uniq
 
-        multi_get(ids).values.compact
+				ids.each_slice(CassandraObject::Configuration::CFG[:key_count]).to_a.map do |slice|
+	        multi_get(slice).values.compact
+				end.flatten
       end
 
       def count
