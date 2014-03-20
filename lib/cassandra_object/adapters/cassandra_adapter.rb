@@ -51,7 +51,9 @@ module CassandraObject
       def connection
         @connection ||= begin
           thrift_options = (config[:thrift] || {})
-          CassandraCQL::Database.new(servers, {keyspace: config[:keyspace]}, thrift_options)
+          client = Cql::Client.connect(hosts: servers)
+					client.use config[:keyspace]
+					client
         end
       end
 
@@ -68,7 +70,7 @@ module CassandraObject
       def select(scope)
         statement = QueryBuilder.new(self, scope).to_query
 
-        execute(statement).fetch do |cql_row|
+        execute(statement).each do |cql_row|
           attributes = cql_row.to_hash
           key = attributes.delete(primary_key_column)
           yield(key, attributes) unless attributes.empty?
@@ -126,7 +128,8 @@ module CassandraObject
       end
 
       def schema_execute(cql, keyspace)
-        schema_db = CassandraCQL::Database.new(CassandraObject::Base.adapter.servers, {keyspace: keyspace}, {connect_timeout: 30, timeout: 30})
+        schema_db = Cql::Client.connect(hosts: CassandraObject::Base.adapter.servers)
+				schema_db.use keyspace
         schema_db.execute cql
       end
       # /SCHEMA
@@ -148,7 +151,7 @@ module CassandraObject
       def statement_with_options(stmt, options)
         if options.any?
           with_stmt = options.map do |k,v|
-            "#{k} = #{CassandraCQL::Statement.quote(v)}"
+            "#{k} = #{v}"
           end.join(' AND ')
 
           "#{stmt} WITH #{with_stmt}"
@@ -166,7 +169,7 @@ module CassandraObject
       private
 
         def sanitize(statement, *bind_vars)
-          CassandraCQL::Statement.sanitize(statement, bind_vars).force_encoding(Encoding::UTF_8)
+					statement
         end
 
         def quote_columns(column_names)
